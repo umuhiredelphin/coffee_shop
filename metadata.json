@@ -1,0 +1,7 @@
+{
+  "name": "Monolith Market & Café",
+  "description": "A high-end, monochrome multi-platform experience for boutique grocery shopping, café orders, and table reservations.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
