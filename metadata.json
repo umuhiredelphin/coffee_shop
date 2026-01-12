@@ -1,6 +1,6 @@
 {
-  "name": "Monolith Market & Café",
-  "description": "A high-end, monochrome multi-platform experience for boutique grocery shopping, café orders, and table reservations.",
+  "name": "F&F Coffee Shop",
+  "description": "Discover the perfect blend of taste and aroma. Buy coffee, tea, and grocery products or book a table.",
   "requestFramePermissions": [
     "camera"
   ]

@@ -24,46 +24,46 @@ export const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) =
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-white/90 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white border-2 border-black w-full max-w-md p-8 md:p-12 shadow-[12px_12px_0px_0px_rgba(0,0,0,1)]">
-        <button onClick={onClose} className="absolute top-6 right-6">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-white rounded-[2rem] w-full max-w-md p-8 md:p-10 shadow-2xl overflow-hidden">
+        <button onClick={onClose} className="absolute top-6 right-6 p-2 hover:bg-gray-100 rounded-full transition-colors">
           <ICONS.Close />
         </button>
 
         {step === 1 ? (
           <>
-            <h2 className="text-3xl font-black uppercase mb-2 tracking-tighter">Table Booking</h2>
-            <p className="text-xs opacity-50 mb-8 tracking-widest uppercase">Reserve your space in the monolith</p>
+            <h2 className="text-2xl font-bold mb-2">Book a Table</h2>
+            <p className="text-sm text-gray-500 mb-8">Join us for the perfect coffee experience.</p>
             
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest">Full Name</label>
+              <div>
+                <label className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2 block">Name</label>
                 <input 
                   required
                   type="text" 
-                  className="w-full border-b border-black py-2 focus:outline-none focus:border-b-2 text-sm"
-                  placeholder="E.G. JOHN DOE"
+                  className="w-full bg-gray-50 border-0 rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#7d5c4b] outline-none"
+                  placeholder="Your full name"
                   value={formData.name}
                   onChange={(e) => setFormData({...formData, name: e.target.value})}
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest">Date</label>
+                <div>
+                  <label className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2 block">Date</label>
                   <input 
                     required
                     type="date" 
-                    className="w-full border-b border-black py-2 focus:outline-none text-sm"
+                    className="w-full bg-gray-50 border-0 rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#7d5c4b] outline-none"
                     value={formData.date}
                     onChange={(e) => setFormData({...formData, date: e.target.value})}
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest">Guests</label>
+                <div>
+                  <label className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2 block">Guests</label>
                   <select 
-                    className="w-full border-b border-black py-2 focus:outline-none text-sm"
+                    className="w-full bg-gray-50 border-0 rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#7d5c4b] outline-none"
                     value={formData.guests}
                     onChange={(e) => setFormData({...formData, guests: e.target.value})}
                   >
@@ -72,36 +72,24 @@ export const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) =
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest">Preferred Time</label>
-                <input 
-                  required
-                  type="time" 
-                  className="w-full border-b border-black py-2 focus:outline-none text-sm"
-                  value={formData.time}
-                  onChange={(e) => setFormData({...formData, time: e.target.value})}
-                />
-              </div>
-
               <button 
                 type="submit"
-                className="w-full bg-black text-white py-4 uppercase font-black text-sm tracking-[0.2em] hover:bg-neutral-800 transition-all active:scale-95 flex items-center justify-center gap-3"
+                className="w-full bg-[#7d5c4b] text-white py-4 rounded-2xl font-bold shadow-lg hover:brightness-110 transition-all active:scale-95"
               >
-                Confirm Request
-                <ICONS.ArrowRight />
+                Confirm Booking
               </button>
             </form>
           </>
         ) : (
           <div className="text-center py-12">
-            <div className="w-16 h-16 border-4 border-black border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
-            <h2 className="text-2xl font-black uppercase mb-4">Confirmed</h2>
-            <p className="text-sm opacity-60 mb-8">We have reserved a table for {formData.guests} on {formData.date} at {formData.time}. A confirmation was sent to your email.</p>
+            <div className="w-20 h-20 bg-green-50 text-green-500 rounded-full flex items-center justify-center mx-auto mb-6 text-3xl">✓</div>
+            <h2 className="text-2xl font-bold mb-4">Confirmed!</h2>
+            <p className="text-sm text-gray-500 mb-8 leading-relaxed">We've saved a spot for {formData.guests} guests on {formData.date}. See you soon!</p>
             <button 
               onClick={onClose}
-              className="px-8 py-3 border border-black uppercase text-xs font-black hover:bg-black hover:text-white transition-all"
+              className="w-full py-4 bg-black text-white rounded-2xl font-bold"
             >
-              Close
+              Done
             </button>
           </div>
         )}

@@ -9,25 +9,27 @@ interface ProductCardProps {
 
 export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
   return (
-    <div className="group border border-black p-4 flex flex-col hover:bg-black hover:text-white transition-all duration-300">
-      <div className="aspect-square overflow-hidden mb-4 bg-gray-100">
+    <div className="bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 flex flex-col group">
+      <div className="aspect-square overflow-hidden relative">
         <img 
           src={product.image} 
           alt={product.name} 
-          className="w-full h-full object-cover grayscale transition-transform duration-700 group-hover:scale-110"
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
         />
+        <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-bold shadow-sm">
+          ${product.price.toFixed(2)}
+        </div>
       </div>
-      <div className="flex justify-between items-start mb-2">
-        <h3 className="text-lg font-bold leading-tight">{product.name}</h3>
-        <span className="font-mono text-sm">${product.price.toFixed(2)}</span>
+      <div className="p-6 flex flex-col flex-grow">
+        <h3 className="text-lg font-bold mb-2 group-hover:text-[#7d5c4b] transition-colors">{product.name}</h3>
+        <p className="text-sm text-gray-500 mb-6 flex-grow">{product.description}</p>
+        <button 
+          onClick={() => onAddToCart(product)}
+          className="w-full py-3 bg-black text-white rounded-2xl font-bold text-sm hover:bg-[#7d5c4b] transition-all active:scale-95"
+        >
+          Add to Order
+        </button>
       </div>
-      <p className="text-xs opacity-60 mb-6 flex-grow">{product.description}</p>
-      <button 
-        onClick={() => onAddToCart(product)}
-        className="w-full py-3 border border-current uppercase text-xs font-black tracking-widest hover:invert transition-all active:scale-95"
-      >
-        Add to Order
-      </button>
     </div>
   );
 };

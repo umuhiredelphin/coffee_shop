@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navbar } from './components/Navbar';
 import { ProductCard } from './components/ProductCard';
 import { BookingModal } from './components/BookingModal';
@@ -13,10 +13,9 @@ const App: React.FC = () => {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isBookingOpen, setIsBookingOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [aiMessage, setAiMessage] = useState<string>('');
-  const [isAiLoading, setIsAiLoading] = useState(false);
 
-  // Cart operations
   const addToCart = (product: Product) => {
     setCart(prev => {
       const existing = prev.find(item => item.id === product.id);
@@ -42,87 +41,78 @@ const App: React.FC = () => {
     }));
   };
 
-  const filteredProducts = activeCategory === 'all' 
-    ? PRODUCTS 
-    : PRODUCTS.filter(p => p.category === activeCategory);
-
-  const fetchAiSuggestion = async () => {
-    setIsAiLoading(true);
-    const suggestion = await getAIAssistantResponse("Suggest a perfect breakfast pairing from the menu consisting of a coffee/tea and a food item.");
-    setAiMessage(suggestion || "");
-    setIsAiLoading(false);
-  };
+  const filteredProducts = PRODUCTS.filter(p => {
+    const matchesCategory = activeCategory === 'all' || p.category === activeCategory;
+    const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
 
   useEffect(() => {
-    fetchAiSuggestion();
+    const fetchAi = async () => {
+      const msg = await getAIAssistantResponse("Welcome message for F&F Coffee Shop customers.");
+      setAiMessage(msg || '');
+    };
+    fetchAi();
   }, []);
 
   return (
-    <div className="min-h-screen bg-white text-black selection:bg-black selection:text-white">
+    <div className="min-h-screen bg-white">
       <Navbar 
         onCartToggle={() => setIsCartOpen(true)} 
         onBookingToggle={() => setIsBookingOpen(true)}
         cartCount={cart.reduce((s, i) => s + i.quantity, 0)}
       />
 
-      {/* Hero Section */}
-      <header className="relative h-screen w-full flex items-center justify-center overflow-hidden border-b border-black">
-        <div className="absolute inset-0 z-0">
-          <img 
-            src="https://picsum.photos/seed/monolith-bg/1920/1080?grayscale" 
-            alt="Hero" 
-            className="w-full h-full object-cover opacity-60 scale-105"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent" />
-        </div>
+      {/* Hero Section - Matching Screenshot */}
+      <header className="hero-gradient h-[75vh] flex flex-col items-center justify-center text-center px-4 pt-16">
+        <h1 className="text-white text-5xl md:text-8xl font-extrabold mb-4 tracking-tight uppercase">
+          F&F COFFEE SHOP
+        </h1>
+        <p className="text-white/90 text-lg md:text-xl font-medium mb-10 max-w-xl">
+          Discover perfect blend of taste and aroma
+        </p>
         
-        <div className="relative z-10 text-center px-4 max-w-4xl">
-          <span className="text-[10px] md:text-xs font-black uppercase tracking-[0.5em] mb-6 block animate-pulse">Since 1984 — Minimalist Living</span>
-          <h1 className="text-6xl md:text-9xl font-black uppercase tracking-tighter leading-none mb-8">
-            The Monolith<br/>Market
-          </h1>
-          <p className="text-sm md:text-lg max-w-2xl mx-auto opacity-70 mb-12 italic serif">
-            "A curated experience of essential items, dark roasts, and brutalist architecture for the modern soul."
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a href="#menu" className="bg-black text-white px-10 py-5 uppercase text-xs font-black tracking-widest hover:bg-neutral-800 transition-all flex items-center justify-center gap-3">
-              Explore Menu
-              <ICONS.ArrowRight />
-            </a>
-            <button 
-              onClick={() => setIsBookingOpen(true)}
-              className="border border-black px-10 py-5 uppercase text-xs font-black tracking-widest hover:bg-black hover:text-white transition-all"
-            >
-              Book Residency
-            </button>
-          </div>
+        <div className="flex flex-wrap gap-4 justify-center mb-12">
+          <button 
+            onClick={() => setIsBookingOpen(true)}
+            className="bg-white text-black px-8 py-3 rounded-full font-bold flex items-center gap-2 shadow-lg hover:bg-gray-100 transition-all active:scale-95"
+          >
+            <ICONS.Calendar />
+            Book a Table
+          </button>
+          <a 
+            href="#menu"
+            className="bg-transparent text-white border-2 border-white px-8 py-3 rounded-full font-bold hover:bg-white/10 transition-all active:scale-95"
+          >
+            View Menu
+          </a>
+        </div>
+
+        {/* Search Bar */}
+        <div className="w-full max-w-2xl relative">
+          <input 
+            type="text"
+            placeholder="Search for your favorite coffee..."
+            className="w-full h-14 pl-6 pr-16 rounded-full bg-white shadow-2xl focus:outline-none text-black font-medium"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          <button className="absolute right-2 top-1/2 -translate-y-1/2 bg-[#7d5c4b] text-white w-11 h-11 rounded-full flex items-center justify-center shadow-md hover:brightness-110 transition-all">
+            <ICONS.Search />
+          </button>
         </div>
       </header>
 
-      {/* AI Suggestion Bar */}
-      {aiMessage && (
-        <section className="bg-black text-white py-4 overflow-hidden whitespace-nowrap border-y border-black">
-          <div className="animate-[scroll_30s_linear_infinite] inline-block">
-            <span className="mx-20 text-[10px] font-black uppercase tracking-[0.3em]">AI Concierge Suggestion: {aiMessage}</span>
-            <span className="mx-20 text-[10px] font-black uppercase tracking-[0.3em]">AI Concierge Suggestion: {aiMessage}</span>
-          </div>
-        </section>
-      )}
-
       {/* Main Content Area */}
-      <main id="menu" className="py-24 px-6 md:px-12 max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-8">
-          <div>
-            <h2 className="text-5xl font-black uppercase tracking-tighter mb-4">Curated Selections</h2>
-            <p className="text-xs opacity-50 uppercase tracking-widest max-w-md">Everything you need, nothing you don't. Pure monochrome quality.</p>
-          </div>
-          
-          <div className="flex flex-wrap gap-4 uppercase text-[10px] font-black tracking-widest overflow-x-auto pb-4 md:pb-0 scrollbar-hide">
+      <main id="menu" className="py-16 px-6 md:px-12 max-w-7xl mx-auto">
+        <div className="flex flex-col md:flex-row justify-between items-center mb-12 gap-6">
+          <h2 className="text-3xl font-bold">Our Menu</h2>
+          <div className="flex flex-wrap gap-2 p-1 bg-gray-100 rounded-full">
             {(['all', 'coffee', 'tea', 'food', 'grocery'] as const).map(cat => (
               <button 
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
-                className={`pb-1 border-b-2 transition-all ${activeCategory === cat ? 'border-black opacity-100' : 'border-transparent opacity-30 hover:opacity-100'}`}
+                className={`px-5 py-2 rounded-full text-xs font-bold uppercase transition-all ${activeCategory === cat ? 'bg-black text-white shadow-md' : 'text-gray-500 hover:text-black'}`}
               >
                 {cat}
               </button>
@@ -130,103 +120,60 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {filteredProducts.map(product => (
-            <ProductCard 
-              key={product.id} 
-              product={product} 
-              onAddToCart={addToCart} 
-            />
-          ))}
-        </div>
+        {filteredProducts.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            {filteredProducts.map(product => (
+              <ProductCard 
+                key={product.id} 
+                product={product} 
+                onAddToCart={addToCart} 
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-20 bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200">
+            <p className="text-gray-400">No products found matching "{searchQuery}"</p>
+          </div>
+        )}
       </main>
 
-      {/* About / Secondary Section */}
-      <section id="about" className="py-24 bg-neutral-50 border-y border-black">
-        <div className="max-w-7xl mx-auto px-6 md:px-12 grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
-          <div className="aspect-[4/5] bg-black overflow-hidden border border-black group">
-            <img 
-              src="https://picsum.photos/seed/store/800/1000?grayscale" 
-              alt="The Monolith Space" 
-              className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-1000"
-            />
-          </div>
-          <div className="space-y-12">
-            <div className="space-y-6">
-              <span className="text-[10px] font-black uppercase tracking-[0.4em] text-neutral-400">Our Philosophy</span>
-              <h2 className="text-6xl font-black uppercase tracking-tighter leading-none">The Void In Everyday Life.</h2>
-              <p className="serif text-xl opacity-80 leading-relaxed italic">
-                "We believe that consumption should be an act of intention. By stripping away color, we invite you to focus on the texture, the aroma, and the soul of the product."
-              </p>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-8 border-t border-black pt-12">
-              <div>
-                <h4 className="text-[10px] font-black uppercase mb-4 tracking-widest">Global Sourcing</h4>
-                <p className="text-xs opacity-60 leading-relaxed">Direct relationships with small estates across the monochrome belt.</p>
-              </div>
-              <div>
-                <h4 className="text-[10px] font-black uppercase mb-4 tracking-widest">Hyper-Minimal</h4>
-                <p className="text-xs opacity-60 leading-relaxed">Each item tested for 100+ hours to ensure absolute necessity.</p>
-              </div>
-            </div>
-
-            <button className="flex items-center gap-4 text-xs font-black uppercase tracking-[0.3em] group">
-              Read our full manifesto 
-              <span className="group-hover:translate-x-2 transition-transform"><ICONS.ArrowRight /></span>
-            </button>
-          </div>
-        </div>
-      </section>
-
       {/* Footer */}
-      <footer className="bg-black text-white py-24 px-6 md:px-12 overflow-hidden relative">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between gap-16 relative z-10">
-          <div className="max-w-sm space-y-8">
-            <h2 className="text-4xl font-black tracking-tighter uppercase">Monolith</h2>
-            <p className="text-xs opacity-50 leading-loose uppercase tracking-widest">
-              123 Brutalist Ave.<br/>Concrete District<br/>Shadow Valley, SV 00000
+      <footer className="bg-black text-white py-16 px-6 md:px-12 mt-12">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
+          <div className="col-span-1 md:col-span-2 space-y-4">
+            <h3 className="text-2xl font-bold">F&F COFFEE SHOP</h3>
+            <p className="text-gray-400 max-w-md leading-relaxed">
+              Serving the finest beans since 1984. Our dedication to aroma and taste is what makes us special. Join our community and experience the ritual.
             </p>
-            <div className="flex gap-6 opacity-50 hover:opacity-100 transition-opacity">
-              <a href="#" className="text-[10px] font-black uppercase tracking-widest">Instagram</a>
-              <a href="#" className="text-[10px] font-black uppercase tracking-widest">Vimeo</a>
-              <a href="#" className="text-[10px] font-black uppercase tracking-widest">Newsletter</a>
+          </div>
+          <div className="space-y-4">
+            <h4 className="font-bold">Contact</h4>
+            <p className="text-sm text-gray-400">123 Brew Lane, Coffee City</p>
+            <p className="text-sm text-gray-400">info@ffcoffee.com</p>
+          </div>
+          <div className="space-y-4">
+            <h4 className="font-bold">Follow Us</h4>
+            <div className="flex gap-4">
+              <span className="text-sm text-gray-400 cursor-pointer hover:text-white">Instagram</span>
+              <span className="text-sm text-gray-400 cursor-pointer hover:text-white">Twitter</span>
             </div>
           </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-12 text-[10px] font-black uppercase tracking-[0.2em]">
-            <div className="space-y-4">
-              <h5 className="text-neutral-500">Shop</h5>
-              <ul className="space-y-2">
-                <li><a href="#" className="hover:line-through">Subscription</a></li>
-                <li><a href="#" className="hover:line-through">Bulk Order</a></li>
-                <li><a href="#" className="hover:line-through">Gift Cards</a></li>
-              </ul>
-            </div>
-            <div className="space-y-4">
-              <h5 className="text-neutral-500">Support</h5>
-              <ul className="space-y-2">
-                <li><a href="#" className="hover:line-through">Track Order</a></li>
-                <li><a href="#" className="hover:line-through">Shipping</a></li>
-                <li><a href="#" className="hover:line-through">Returns</a></li>
-              </ul>
-            </div>
-            <div className="space-y-4 col-span-2 md:col-span-1">
-              <h5 className="text-neutral-500">Legal</h5>
-              <ul className="space-y-2">
-                <li><a href="#" className="hover:line-through">Privacy Policy</a></li>
-                <li><a href="#" className="hover:line-through">Terms of Use</a></li>
-              </ul>
-            </div>
-          </div>
-        </div>
-        
-        <div className="absolute -bottom-12 -right-12 text-[15vw] font-black text-white/[0.03] pointer-events-none select-none uppercase tracking-tighter">
-          Monolith
         </div>
       </footer>
 
-      {/* Overlays */}
+      {/* Floating Action Button (Cart) */}
+      <button 
+        onClick={() => setIsCartOpen(true)}
+        className="fixed bottom-6 right-6 z-50 bg-[#7d5c4b] text-white p-4 rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all group"
+      >
+        <ICONS.Cart />
+        {cart.length > 0 && (
+          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold border-2 border-white">
+            {cart.reduce((s, i) => s + i.quantity, 0)}
+          </span>
+        )}
+      </button>
+
       <BookingModal 
         isOpen={isBookingOpen} 
         onClose={() => setIsBookingOpen(false)} 
@@ -239,14 +186,6 @@ const App: React.FC = () => {
         onRemove={removeFromCart}
         onUpdateQuantity={updateQuantity}
       />
-
-      {/* Global CSS for marquee */}
-      <style>{`
-        @keyframes scroll {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
-        }
-      `}</style>
     </div>
   );
 };
