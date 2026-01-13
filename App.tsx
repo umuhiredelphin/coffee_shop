@@ -4,17 +4,26 @@ import { Navbar } from './components/Navbar';
 import { ProductCard } from './components/ProductCard';
 import { BookingModal } from './components/BookingModal';
 import { CartDrawer } from './components/CartDrawer';
+import { CartPage } from './components/CartPage';
+import { OrderConfirmationPage } from './components/OrderConfirmationPage';
 import { PRODUCTS, ICONS } from './constants';
 import { Product, CartItem, Category } from './types';
 import { getAIAssistantResponse } from './services/geminiService';
 
 const App: React.FC = () => {
+  const [currentView, setCurrentView] = useState<'home' | 'cart' | 'confirmation'>('home');
   const [activeCategory, setActiveCategory] = useState<Category | 'all'>('all');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isBookingOpen, setIsBookingOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [aiMessage, setAiMessage] = useState<string>('');
+  const [lastAddedItem, setLastAddedItem] = useState<Product | null>(null);
+
+  // Scroll to top whenever the view changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [currentView]);
 
   const addToCart = (product: Product) => {
     setCart(prev => {
@@ -24,7 +33,8 @@ const App: React.FC = () => {
       }
       return [...prev, { ...product, quantity: 1 }];
     });
-    setIsCartOpen(true);
+    setLastAddedItem(product);
+    setCurrentView('confirmation');
   };
 
   const removeFromCart = (id: string) => {
@@ -55,18 +65,65 @@ const App: React.FC = () => {
     fetchAi();
   }, []);
 
+  const handleCartClick = () => {
+    setCurrentView('cart');
+    setIsCartOpen(false);
+  };
+
+  const cartTotalItems = cart.reduce((s, i) => s + i.quantity, 0);
+
+  // Define shared navbar props
+  const navbarProps = {
+    onCartToggle: handleCartClick,
+    onBookingToggle: () => setIsBookingOpen(true),
+    onHomeClick: () => setCurrentView('home'),
+    cartCount: cartTotalItems,
+  };
+
+  if (currentView === 'cart') {
+    return (
+      <div className="min-h-screen bg-[#fcfaf8]">
+        <Navbar {...navbarProps} />
+        <CartPage 
+          items={cart} 
+          onRemove={removeFromCart} 
+          onUpdateQuantity={updateQuantity} 
+          onBackToMenu={() => setCurrentView('home')} 
+        />
+        <BookingModal 
+          isOpen={isBookingOpen} 
+          onClose={() => setIsBookingOpen(false)} 
+        />
+      </div>
+    );
+  }
+
+  if (currentView === 'confirmation') {
+    return (
+      <div className="min-h-screen bg-[#fcfaf8]">
+        <Navbar {...navbarProps} />
+        <OrderConfirmationPage 
+          product={lastAddedItem}
+          onContinueShopping={() => setCurrentView('home')}
+          onViewCart={() => setCurrentView('cart')}
+          onAddToCart={addToCart}
+        />
+        <BookingModal 
+          isOpen={isBookingOpen} 
+          onClose={() => setIsBookingOpen(false)} 
+        />
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-white selection:bg-[#7d5c4b] selection:text-white">
-      <Navbar 
-        onCartToggle={() => setIsCartOpen(true)} 
-        onBookingToggle={() => setIsBookingOpen(true)}
-        cartCount={cart.reduce((s, i) => s + i.quantity, 0)}
-      />
+    <div className="min-h-screen bg-[#fcfaf8] selection:bg-black selection:text-white">
+      <Navbar {...navbarProps} />
 
       {/* Hero Section */}
-      <header className="hero-gradient h-[80vh] flex flex-col items-center justify-center text-center px-4 pt-16">
+      <header className="hero-gradient h-[85vh] flex flex-col items-center justify-center text-center px-4 pt-16">
         <div className="animate-fade-in space-y-4">
-          <h1 className="text-white text-6xl md:text-9xl font-extrabold mb-4 tracking-tighter uppercase leading-none">
+          <h1 className="text-white text-6xl md:text-9xl font-extrabold mb-4 tracking-tighter uppercase leading-none drop-shadow-2xl">
             F&F <br className="md:hidden" /> COFFEE
           </h1>
           <p className="text-white/90 text-xl md:text-2xl font-light mb-10 max-w-2xl mx-auto italic">
@@ -76,7 +133,7 @@ const App: React.FC = () => {
           <div className="flex flex-wrap gap-4 justify-center mb-12">
             <button 
               onClick={() => setIsBookingOpen(true)}
-              className="bg-white text-black px-10 py-4 rounded-full font-bold flex items-center gap-3 shadow-2xl hover:bg-gray-100 transition-all active:scale-95"
+              className="bg-[#991b1b] text-white px-10 py-4 rounded-full font-bold flex items-center gap-3 shadow-2xl hover:bg-[#dc2626] transition-all active:scale-95"
             >
               <ICONS.Table />
               Book a Table
@@ -98,7 +155,7 @@ const App: React.FC = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
-            <button className="absolute right-3 top-1/2 -translate-y-1/2 bg-[#7d5c4b] text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all">
+            <button className="absolute right-3 top-1/2 -translate-y-1/2 bg-[#991b1b] text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg hover:bg-[#dc2626] transition-all">
               <ICONS.Search />
             </button>
           </div>
@@ -107,10 +164,10 @@ const App: React.FC = () => {
 
       {/* AI Message Bar */}
       {aiMessage && (
-        <div className="bg-[#7d5c4b] text-white py-3 overflow-hidden whitespace-nowrap">
-          <div className="animate-[scroll_40s_linear_infinite] inline-block">
-            <span className="mx-20 text-xs font-bold uppercase tracking-widest">{aiMessage} — Order now for fresh delivery</span>
-            <span className="mx-20 text-xs font-bold uppercase tracking-widest">{aiMessage} — Order now for fresh delivery</span>
+        <div className="bg-black text-white py-3 overflow-hidden whitespace-nowrap">
+          <div className="animate-[scroll_45s_linear_infinite] inline-block">
+            <span className="mx-20 text-xs font-bold uppercase tracking-widest">{aiMessage} — Join our loyalty program for 10% off</span>
+            <span className="mx-20 text-xs font-bold uppercase tracking-widest">{aiMessage} — Join our loyalty program for 10% off</span>
           </div>
         </div>
       )}
@@ -119,15 +176,15 @@ const App: React.FC = () => {
       <main id="menu" className="py-24 px-6 md:px-12 max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-8">
           <div className="space-y-4">
-            <span className="text-[#7d5c4b] text-xs font-black uppercase tracking-[0.4em]">Our Selections</span>
-            <h2 className="text-5xl font-extrabold tracking-tight">The Brew Menu</h2>
+            <span className="text-gray-400 text-xs font-black uppercase tracking-[0.4em]">Our Selections</span>
+            <h2 className="text-5xl font-extrabold tracking-tight text-black">The Brew Menu</h2>
           </div>
-          <div className="flex flex-wrap gap-2 p-1.5 bg-gray-100 rounded-3xl">
+          <div className="flex flex-wrap gap-2 p-1.5 bg-gray-200/50 rounded-3xl">
             {(['all', 'coffee', 'tea', 'food', 'grocery'] as const).map(cat => (
               <button 
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
-                className={`px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${activeCategory === cat ? 'bg-white text-[#7d5c4b] shadow-sm' : 'text-gray-400 hover:text-black'}`}
+                className={`px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${activeCategory === cat ? 'bg-black text-white shadow-sm' : 'text-gray-400 hover:text-black'}`}
               >
                 {cat}
               </button>
@@ -147,17 +204,17 @@ const App: React.FC = () => {
           </div>
         ) : (
           <div className="text-center py-32 bg-gray-50 rounded-[3rem] border-2 border-dashed border-gray-200">
-            <div className="text-4xl mb-4">🔍</div>
+            <div className="text-4xl mb-4 text-black">🔍</div>
             <p className="text-gray-400 font-medium">We couldn't find any products matching "{searchQuery}"</p>
-            <button onClick={() => setSearchQuery('')} className="mt-4 text-[#7d5c4b] font-bold underline">Clear search</button>
+            <button onClick={() => setSearchQuery('')} className="mt-4 text-black font-bold underline inline-block">Clear search</button>
           </div>
         )}
       </main>
 
       {/* About Us Section */}
-      <section id="about" className="py-24 bg-[#1a1a1a] text-white overflow-hidden">
+      <section id="about" className="py-24 bg-black text-white overflow-hidden">
         <div className="max-w-7xl mx-auto px-6 md:px-12 grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
-          <div className="relative group">
+          <div className="relative group block">
             <div className="aspect-[4/5] rounded-[3rem] overflow-hidden">
               <img 
                 src="https://images.unsplash.com/photo-1442512595331-e89e73853f31?q=80&w=2070&auto=format&fit=crop" 
@@ -165,27 +222,27 @@ const App: React.FC = () => {
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000"
               />
             </div>
-            <div className="absolute -bottom-10 -right-10 w-64 h-64 bg-[#7d5c4b] rounded-[3rem] p-10 flex flex-col justify-end hidden md:flex">
+            <div className="absolute -bottom-10 -right-10 w-64 h-64 bg-white text-black rounded-[3rem] p-10 flex flex-col justify-end hidden md:flex shadow-2xl border border-gray-100">
               <span className="text-4xl font-bold mb-2">35+</span>
               <p className="text-xs uppercase font-bold tracking-widest opacity-70">Years of Brewing Excellence</p>
             </div>
           </div>
           <div className="space-y-10">
             <div className="space-y-6">
-              <span className="text-[#7d5c4b] text-xs font-black uppercase tracking-[0.4em]">Our Story</span>
+              <span className="text-gray-500 text-xs font-black uppercase tracking-[0.4em]">Our Story</span>
               <h2 className="text-6xl font-extrabold tracking-tighter leading-tight">Crafted with Heart, Roasted with Soul.</h2>
               <p className="text-gray-400 leading-loose text-lg italic serif">
                 "F&F Coffee Shop began as a small stand in the Concrete District. Today, we bring the same passion for the perfect roast to every cup, ensuring every customer finds their unique blend."
               </p>
             </div>
             <div className="grid grid-cols-2 gap-8 border-t border-white/10 pt-12">
-              <div className="space-y-4">
-                <div className="w-10 h-10 bg-[#7d5c4b] rounded-full flex items-center justify-center">✨</div>
+              <div className="space-y-4 group">
+                <div className="w-10 h-10 bg-white text-black rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">✨</div>
                 <h4 className="font-bold">Organic Beans</h4>
                 <p className="text-xs text-gray-500">Sourced directly from sustainable small-batch farmers.</p>
               </div>
-              <div className="space-y-4">
-                <div className="w-10 h-10 bg-[#7d5c4b] rounded-full flex items-center justify-center">🏆</div>
+              <div className="space-y-4 group">
+                <div className="w-10 h-10 bg-white text-black rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">🏆</div>
                 <h4 className="font-bold">Award Winning</h4>
                 <p className="text-xs text-gray-500">Voted best local espresso for three consecutive years.</p>
               </div>
@@ -196,21 +253,24 @@ const App: React.FC = () => {
 
       {/* Visit Us Section */}
       <section className="py-24 px-6 md:px-12 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-12">
-        <div className="lg:col-span-2 rounded-[3rem] overflow-hidden h-[400px] bg-gray-100 border-4 border-white shadow-2xl">
-          <img src="https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=2047&auto=format&fit=crop" className="w-full h-full object-cover grayscale" alt="Location" />
+        <div className="lg:col-span-2 rounded-[3rem] overflow-hidden h-[400px] bg-gray-100 border-4 border-white shadow-2xl block relative group">
+          <img src="https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=2047&auto=format&fit=crop" className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700" alt="Location" />
+          <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors flex items-center justify-center">
+             <span className="bg-white text-black px-6 py-3 rounded-full font-bold opacity-0 group-hover:opacity-100 transition-opacity">Open in Maps</span>
+          </div>
         </div>
-        <div className="bg-gray-50 p-12 rounded-[3rem] flex flex-col justify-center space-y-8">
-          <h3 className="text-3xl font-bold">Visit Us</h3>
+        <div className="bg-white p-12 rounded-[3rem] flex flex-col justify-center space-y-8 border border-gray-100">
+          <h3 className="text-3xl font-bold text-black">Visit Us</h3>
           <div className="space-y-6">
             <div className="flex gap-4">
-              <div className="text-[#7d5c4b]">📍</div>
+              <div className="text-black">📍</div>
               <div>
                 <h5 className="font-bold text-sm">Location</h5>
                 <p className="text-sm text-gray-500">123 Brew Lane, Coffee City</p>
               </div>
             </div>
             <div className="flex gap-4">
-              <div className="text-[#7d5c4b]">⏰</div>
+              <div className="text-black">⏰</div>
               <div>
                 <h5 className="font-bold text-sm">Hours</h5>
                 <p className="text-sm text-gray-500">Mon - Fri: 7am - 9pm</p>
@@ -218,7 +278,10 @@ const App: React.FC = () => {
               </div>
             </div>
           </div>
-          <button onClick={() => setIsBookingOpen(true)} className="w-full py-4 bg-black text-white rounded-2xl font-bold hover:bg-[#7d5c4b] transition-all">Get Directions</button>
+          <a href="https://maps.google.com" target="_blank" rel="noopener noreferrer" className="w-full py-4 bg-[#991b1b] text-white rounded-2xl font-bold hover:bg-[#dc2626] transition-all text-center flex items-center justify-center gap-2">
+            Get Directions
+            <ICONS.ArrowRight />
+          </a>
         </div>
       </section>
 
@@ -231,27 +294,27 @@ const App: React.FC = () => {
               Crafting memories one cup at a time. Join the F&F community and experience the true ritual of coffee.
             </p>
             <div className="flex gap-6">
-              <a href="#" className="w-10 h-10 border border-white/20 rounded-full flex items-center justify-center hover:bg-white hover:text-black transition-all">In</a>
-              <a href="#" className="w-10 h-10 border border-white/20 rounded-full flex items-center justify-center hover:bg-white hover:text-black transition-all">Tw</a>
-              <a href="#" className="w-10 h-10 border border-white/20 rounded-full flex items-center justify-center hover:bg-white hover:text-black transition-all">Fb</a>
+              <div className="w-10 h-10 border border-white/20 rounded-full flex items-center justify-center hover:bg-white hover:text-black transition-all cursor-pointer">In</div>
+              <div className="w-10 h-10 border border-white/20 rounded-full flex items-center justify-center hover:bg-white hover:text-black transition-all cursor-pointer">Tw</div>
+              <div className="w-10 h-10 border border-white/20 rounded-full flex items-center justify-center hover:bg-white hover:text-black transition-all cursor-pointer">Fb</div>
             </div>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-3 gap-12 text-xs font-bold uppercase tracking-widest">
             <div className="space-y-4">
-              <h5 className="text-[#7d5c4b]">Shop</h5>
+              <h5 className="text-gray-500">Shop</h5>
               <ul className="space-y-3">
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Whole Beans</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Merchandise</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Gift Cards</a></li>
+                <li><a href="#coffee" className="text-gray-400 hover:text-white transition-colors">Whole Beans</a></li>
+                <li><a href="#merch" className="text-gray-400 hover:text-white transition-colors">Merchandise</a></li>
+                <li><a href="#gifts" className="text-gray-400 hover:text-white transition-colors">Gift Cards</a></li>
               </ul>
             </div>
             <div className="space-y-4">
-              <h5 className="text-[#7d5c4b]">Support</h5>
+              <h5 className="text-gray-500">Support</h5>
               <ul className="space-y-3">
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Delivery FAQ</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Wholesale</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Contact</a></li>
+                <li><a href="#faq" className="text-gray-400 hover:text-white transition-colors">Delivery FAQ</a></li>
+                <li><a href="#wholesale" className="text-gray-400 hover:text-white transition-colors">Wholesale</a></li>
+                <li><a href="#contact" className="text-gray-400 hover:text-white transition-colors">Contact</a></li>
               </ul>
             </div>
           </div>
@@ -263,13 +326,13 @@ const App: React.FC = () => {
 
       {/* Cart FAB */}
       <button 
-        onClick={() => setIsCartOpen(true)}
-        className="fixed bottom-8 right-8 z-[100] bg-[#7d5c4b] text-white p-5 rounded-full shadow-3xl hover:scale-110 active:scale-95 transition-all group"
+        onClick={handleCartClick}
+        className="fixed bottom-8 right-8 z-[100] bg-[#991b1b] text-white p-5 rounded-full shadow-3xl hover:bg-[#dc2626] hover:scale-110 active:scale-95 transition-all group flex items-center justify-center"
       >
         <ICONS.Cart />
         {cart.length > 0 && (
-          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-6 h-6 rounded-full flex items-center justify-center font-bold border-4 border-white">
-            {cart.reduce((s, i) => s + i.quantity, 0)}
+          <span className="absolute -top-1 -right-1 bg-black text-white text-[10px] w-6 h-6 rounded-full flex items-center justify-center font-bold border-2 border-white">
+            {cartTotalItems}
           </span>
         )}
       </button>
